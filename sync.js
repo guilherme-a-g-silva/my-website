@@ -1,13 +1,10 @@
-// sync.js
-
+// sync.js (ESM)
 /* eslint-disable */
+import { Octokit } from "@octokit/rest";
+import admin from "firebase-admin";
+import fs from "fs";
 
-const { Octokit } = require("@octokit/rest");
-const admin = require("firebase-admin");
-const fs = require("fs");
-
-// Secrets/ENV
-const GH_PAT = process.env.GH_PAT; // o token do GitHub
+const GH_PAT = process.env.GH_PAT;
 const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID;
 const FIREBASE_SA_PATH = process.env.FIREBASE_SA_PATH || "service-account.json";
 const GITHUB_USER = process.env.GITHUB_USERNAME;
@@ -20,10 +17,9 @@ admin.initializeApp({
 });
 const db = admin.firestore();
 
-// GitHub API client
+// GitHub client
 const octokit = new Octokit(GH_PAT ? { auth: GH_PAT } : {});
 
-// Helper para ir buscar todos os repos
 async function listAllRepos(username) {
   const perPage = 100;
   let page = 1;
@@ -49,8 +45,6 @@ async function run() {
   if (!FIREBASE_PROJECT_ID) throw new Error("Falta env FIREBASE_PROJECT_ID");
 
   const repos = await listAllRepos(GITHUB_USER);
-
-  // podes filtrar aqui se quiseres excluir forks, archived, etc
   const useful = repos.filter(r => !r.fork && !r.archived);
 
   const batch = db.batch();
@@ -59,7 +53,6 @@ async function run() {
     const id = String(r.id);
     const ref = db.collection("projects").doc(id);
 
-    // Lê doc existente para preservar flags manuais
     const snap = await ref.get();
     const existing = snap.exists ? snap.data() : {};
 
@@ -72,9 +65,8 @@ async function run() {
       stars: r.stargazers_count || 0,
       updatedAt: r.pushed_at || r.updated_at || new Date().toISOString(),
       topics: r.topics || existing.topics || [],
-      // preserva valores que controlas no Console
       featured: existing.featured ?? false,
-      published: existing.published ?? false, // começa oculto
+      published: existing.published ?? false,
       order: existing.order ?? 9999,
       imageUrl: existing.imageUrl ?? "",
     };
