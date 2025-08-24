@@ -2,12 +2,13 @@ name: Sync GitHub → Firestore
 
 on:
   schedule:
-    - cron: "0 6 * * *"   # corre todos os dias às 06:00 UTC (~07h em Lisboa no verão)
+    - cron: "0 6 * * *"   # diário às 06:00 UTC (~07:00 PT no verão)
   workflow_dispatch:       # permite correr manualmente
 
 jobs:
   sync:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,10 +26,16 @@ jobs:
         env:
           FIREBASE_SA_JSON: ${{ secrets.FIREBASE_SA_JSON }}
 
+      # (Opcional) Debug: mostrar o topo dos ficheiros se precisares
+      # - name: Show first lines of sync files
+      #   run: |
+      #     sed -n '1,20p' sync.cjs || true
+      #     sed -n '1,20p' sync.js || true
+
       - name: Run sync
-        run: node sync.js
+        run: node sync.cjs
         env:
           FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
-          GITHUB_USERNAME: ${{ secrets.GITHUB_USERNAME }}
-          GH_PAT: ${{ secrets.GH_PAT }}
+          GH_USERNAME: ${{ vars.GH_USERNAME }}
+          GH_PAT: ${{ secrets.GH_PAT }}          # se não usares PAT, remove esta linha
           FIREBASE_SA_PATH: service-account.json

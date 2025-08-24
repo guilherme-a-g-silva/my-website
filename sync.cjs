@@ -1,16 +1,13 @@
-// sync.js (ESM)
-/* eslint-disable */
-
-import { Octokit } from "@octokit/rest";
-import admin from "firebase-admin";
-import fs from "fs";
+// sync.cjs
+const { Octokit } = require("@octokit/rest");
+const admin = require("firebase-admin");
+const fs = require("fs");
 
 const GH_PAT = process.env.GH_PAT;
 const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID;
 const FIREBASE_SA_PATH = process.env.FIREBASE_SA_PATH || "service-account.json";
-const GITHUB_USER = process.env.GITHUB_USERNAME;
+const GITHUB_USER = process.env.GH_USERNAME;
 
-// Firebase Admin SDK
 const serviceAccount = JSON.parse(fs.readFileSync(FIREBASE_SA_PATH, "utf8"));
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -18,7 +15,6 @@ admin.initializeApp({
 });
 const db = admin.firestore();
 
-// GitHub client
 const octokit = new Octokit(GH_PAT ? { auth: GH_PAT } : {});
 
 async function listAllRepos(username) {
@@ -49,14 +45,11 @@ async function run() {
   const useful = repos.filter(r => !r.fork && !r.archived);
 
   const batch = db.batch();
-
   for (const r of useful) {
     const id = String(r.id);
     const ref = db.collection("projects").doc(id);
-
     const snap = await ref.get();
     const existing = snap.exists ? snap.data() : {};
-
     const payload = {
       id,
       title: r.name || "",
@@ -71,10 +64,8 @@ async function run() {
       order: existing.order ?? 9999,
       imageUrl: existing.imageUrl ?? "",
     };
-
     batch.set(ref, payload, { merge: true });
   }
-
   await batch.commit();
   console.log(`Synced ${useful.length} repos -> Firestore/projects`);
 }
