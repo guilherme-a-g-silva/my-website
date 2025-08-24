@@ -1,5 +1,6 @@
 // sync.js (ESM)
 /* eslint-disable */
+
 import { Octokit } from "@octokit/rest";
 import admin from "firebase-admin";
 import fs from "fs";
