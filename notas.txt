@@ -1,0 +1,30 @@
+--------------------!! FAZER FETCH AOS PROJETOS DO FIREBASE !!-----------------------------
+
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "./firebase";
+
+  const [projects, setProjects] = useState([])
+
+  useEffect(() => {
+    async function fetchProjects() {
+      const q = await getDocs(collection(db, "projects"))
+      const items = q.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }))
+      setProjects(items)
+    }
+
+    fetchProjects()
+  }, [])
+
+      <div id="projects" className="flex flex-col items-center space-y-10">
+        {projects.map(project => (
+          <div key={project.id}>
+            <h2>Title:{project.title}</h2>
+            <a href={project.liveLink} target="_blank">Live</a>
+          </div>
+        ))}
+      </div>
+
+--------------------------------------------------------------------------------------------
